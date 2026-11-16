@@ -1,0 +1,22 @@
+# Quick way to run MongoDB (and optionally the API) without installing anything:
+#   docker compose up -d mongo          -> just the database
+#   docker compose up --build           -> database + backend
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: [mongo-data:/data/db]
+
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    environment:
+      MONGO_URI: mongodb://mongo:27017/huddle
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      NODE_ENV: production
+    depends_on: [mongo]
+
+volumes:
+  mongo-data:
