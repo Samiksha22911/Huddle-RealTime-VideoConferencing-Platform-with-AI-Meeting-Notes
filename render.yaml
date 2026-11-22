@@ -1,0 +1,31 @@
+# Render "Blueprint": New + > Blueprint > pick this repo. Fill the three "sync: false" values when asked.
+services:
+  - type: web
+    name: huddle-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false        # your Vercel URL, e.g. https://huddle.vercel.app (no trailing slash)
+      - key: GOOGLE_CLIENT_ID
+        sync: false        # optional
+      - key: ANTHROPIC_API_KEY
+        sync: false        # optional (AI notes)
+      - key: TURN_URLS
+        sync: false        # optional but recommended
+      - key: TURN_USERNAME
+        sync: false
+      - key: TURN_CREDENTIAL
+        sync: false

@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
+import { SERVER_URL } from './config';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import AuthPage from './pages/AuthPage';
@@ -19,6 +21,11 @@ function Protected({ children }) {
 
 export default function App() {
   const { pathname } = useLocation();
+
+  // Free hosting puts the API to sleep; this wakes it while the visitor is still reading the page.
+  useEffect(() => {
+    fetch(`${SERVER_URL}/health`).catch(() => {});
+  }, []);
   const inRoom = pathname.startsWith('/room/'); // the meeting screen is full-bleed, no navbar
 
   return (

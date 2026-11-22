@@ -21,6 +21,7 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
   const [title, setTitle] = useState('');
   const [peers, setPeers] = useState({}); // id -> { id, name, isHost, hand, audio, video, screen, stream }
   const [messages, setMessages] = useState([]);
+  const [transcript, setTranscript] = useState([]); // finished sentences from everyone: { id, speaker, text, at }
   const [waiting, setWaiting] = useState([]);
   const [captions, setCaptions] = useState({}); // id -> { name, text, final, ts }
   const [reactions, setReactions] = useState([]);
@@ -71,19 +72,24 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
     const toPeer = (p) => ({ ...p, stream: getStream(p.id), v: 0 });
     const patchPeer = (id, patch) => setPeers((p) => (p[id] ? { ...p, [id]: { ...p[id], ...patch } } : p));
 
-    function createPeer(peerId) {
+    function createPeer(peerId, initiator = false) {
       const existing = pcsRef.current.get(peerId);
       if (existing) return existing;
 
       const pc = new RTCPeerConnection({ iceServers: latest.current.iceServers });
       const stream = getStream(peerId);
 
-      // Always negotiate one audio + one video m-line, even if we have no camera/mic,
-      // so we can still RECEIVE. Real tracks are attached with replaceTrack (no renegotiation).
-      const a = pc.addTransceiver('audio', { direction: 'sendrecv' });
-      const v = pc.addTransceiver('video', { direction: 'sendrecv' });
-      if (latest.current.audioTrack) a.sender.replaceTrack(latest.current.audioTrack).catch(() => {});
-      if (latest.current.videoTrack) v.sender.replaceTrack(latest.current.videoTrack).catch(() => {});
+      if (initiator) {
+        // The caller decides the m-lines: always one audio + one video, even without a camera/mic,
+        // so we can still RECEIVE. Real tracks go in with replaceTrack (no renegotiation later).
+        const a = pc.addTransceiver('audio', { direction: 'sendrecv' });
+        const v = pc.addTransceiver('video', { direction: 'sendrecv' });
+        if (latest.current.audioTrack) a.sender.replaceTrack(latest.current.audioTrack).catch(() => {});
+        if (latest.current.videoTrack) v.sender.replaceTrack(latest.current.videoTrack).catch(() => {});
+      }
+      // The ANSWERING side deliberately creates no transceivers here. They are created from the
+      // offer, and we attach our tracks to them in onSignal. (Pre-creating them with addTransceiver
+      // leaves our tracks on unused transceivers, so the caller would receive nothing from us.)
 
       pc.onicecandidate = (e) => {
         if (e.candidate) socket.emit('signal', { to: peerId, data: { ice: e.candidate } });
@@ -101,7 +107,7 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
 
     async function callPeer(peerId) {
       try {
-        const pc = createPeer(peerId);
+        const pc = createPeer(peerId, true);
         await pc.setLocalDescription(await pc.createOffer());
         socket.emit('signal', { to: peerId, data: { sdp: pc.localDescription } });
       } catch (err) {
@@ -111,13 +117,32 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
 
     async function onSignal({ from, data }) {
       try {
-        const pc = createPeer(from);
+        let pc = createPeer(from);
         if (data.sdp) {
+          const isOffer = data.sdp.type === 'offer';
+          if (isOffer && pc.signalingState === 'have-local-offer') {
+            // Both sides called each other at the same moment ("glare"). The smaller id gives way.
+            if (selfIdRef.current < from) {
+              pc.close();
+              pcsRef.current.delete(from);
+              pc = createPeer(from); // fresh connection that will answer
+            } else {
+              return; // we win: ignore their offer, they will answer ours
+            }
+          }
           await pc.setRemoteDescription(data.sdp);
+          if (isOffer) {
+            // Transceivers now exist (created from the offer): send our own audio/video back on them.
+            for (const t of pc.getTransceivers()) {
+              const track = t.receiver.track.kind === 'audio' ? latest.current.audioTrack : latest.current.videoTrack;
+              t.direction = 'sendrecv';
+              if (track) await t.sender.replaceTrack(track).catch(() => {});
+            }
+          }
           const queued = pendingIceRef.current.get(from) || [];
           pendingIceRef.current.delete(from);
           for (const c of queued) await pc.addIceCandidate(c).catch(() => {});
-          if (data.sdp.type === 'offer') {
+          if (isOffer) {
             await pc.setLocalDescription(await pc.createAnswer());
             socket.emit('signal', { to: from, data: { sdp: pc.localDescription } });
           }
@@ -191,6 +216,7 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
       });
       setPeers(map);
       setMessages(d.messages || []);
+      setTranscript(d.transcript || []);
       setWaiting(d.waiting || []);
       waitingCountRef.current = (d.waiting || []).length;
       setStatus('in');
@@ -211,6 +237,7 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
 
     socket.on('signal', onSignal);
     socket.on('chat', (m) => setMessages((list) => [...list, m]));
+    socket.on('transcript-line', (l) => setTranscript((list) => (list.some((x) => x.id === l.id) ? list : [...list, l])));
     socket.on('caption', (c) => setCaptions((prev) => ({ ...prev, [c.id]: { name: c.name, text: c.text, final: c.final, ts: Date.now() } })));
     socket.on('peer-media', ({ id, audio, video, screen }) => patchPeer(id, { audio, video, screen }));
 
@@ -278,7 +305,7 @@ export function useMeeting({ roomId, name, token, enabled, iceServers, audioTrac
   return {
     status, error, selfId, isHost, waitingRoom, title,
     peers: Object.values(peers),
-    messages, waiting, captions, reactions, recorders, handRaised,
+    messages, transcript, waiting, captions, reactions, recorders, handRaised,
     sendChat: (text) => emit('chat', text),
     sendCaption: (text, final) => emit('caption', { text, final }),
     sendReaction: (emoji) => emit('reaction', emoji),

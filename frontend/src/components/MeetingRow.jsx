@@ -8,7 +8,7 @@ export default function MeetingRow({ m, onDelete }) {
       <div className="row-main">
         <h3>{m.title}</h3>
         <p className="muted">
-          {formatDate(m.createdAt)}. Hosted by {m.isHost ? 'you' : m.hostName}. {m.participantCount} {m.participantCount === 1 ? 'person' : 'people'} joined.
+          {formatDate(m.scheduledFor || m.createdAt)}. Hosted by {m.isHost ? 'you' : m.hostName}. {m.participantCount} {m.participantCount === 1 ? 'person' : 'people'} joined.
         </p>
       </div>
       <div className="row-badges">

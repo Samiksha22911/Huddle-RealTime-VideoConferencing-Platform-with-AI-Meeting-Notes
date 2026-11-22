@@ -1,13 +1,13 @@
-import dns from 'node:dns';
-dns.setServers(['8.8.8.8', '1.1.1.1']);
-
 import { createServer } from 'node:http';
+import dns from 'node:dns';
 import mongoose from 'mongoose';
 import { createApp } from './app.js';
 import { attachSocket } from './socket/index.js';
 import { env } from './config/env.js';
 
 async function start() {
+  // Optional: some Wi-Fi networks cannot resolve mongodb+srv addresses. Set DNS_SERVERS=8.8.8.8,1.1.1.1 to fix.
+  if (env.dnsServers.length) dns.setServers(env.dnsServers);
   await mongoose.connect(env.mongoUri);
   console.log(`MongoDB connected: ${mongoose.connection.host}`);
 

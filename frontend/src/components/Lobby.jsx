@@ -1,22 +1,10 @@
-import { Copy, Mic, MicOff, Video, VideoOff } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
-
 import { useEffect, useRef } from 'react';
 import { Mic, MicOff, Video, VideoOff } from 'lucide-react';
-import { initials } from '../utils';
+import { formatDate, initials } from '../utils';
+import InviteShare from './InviteShare';
 
 export default function Lobby({ info, local, name, onName, onJoin, onBack, isHost }) {
   const ref = useRef(null);
-  const toast = useToast();
-  const link = `${window.location.origin}/room/${info.roomId}`;
-  const copy = async () => {
-  try {
-    await navigator.clipboard.writeText(link);
-    toast('Invite link copied');
-  } catch {
-    toast(`Share this code: ${info.roomId}`);
-  }
-};
   useEffect(() => {
     if (ref.current) ref.current.srcObject = local.stream || null;
   }, [local.stream]);
@@ -44,16 +32,8 @@ export default function Lobby({ info, local, name, onName, onJoin, onBack, isHos
 
       <section className="lobby-form">
         <h1>{info.title}</h1>
-        <div className="invite-box">
-  <code>{info.roomId}</code>
-  <button type="button" className="btn btn-ghost" onClick={copy}>
-    <Copy size={16} /> Copy invite link
-  </button>
-  <a className="btn btn-ghost" target="_blank" rel="noreferrer"
-     href={`https://wa.me/?text=${encodeURIComponent('Join my meeting: ' + link)}`}>
-    WhatsApp
-  </a>
-</div>
+        {info.scheduledFor && <p className="scheduled-note">Scheduled for {formatDate(info.scheduledFor)}</p>}
+        <InviteShare roomId={info.roomId} title={info.title} />
         <p className="muted">
           Hosted by {info.hostName}. {isHost ? 'You are the host of this meeting.' : info.waitingRoom ? 'The host will need to let you in.' : 'Ready when you are.'}
         </p>

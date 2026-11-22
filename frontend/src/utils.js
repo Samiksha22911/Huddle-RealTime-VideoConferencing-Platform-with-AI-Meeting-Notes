@@ -55,3 +55,18 @@ export const formatDuration = (seconds) => {
   const mm = String(m).padStart(h ? 2 : 1, '0');
   return `${h ? `${h}:` : ''}${mm}:${String(s).padStart(2, '0')}`;
 };
+
+/** "Add to Google Calendar" link for a scheduled meeting (no backend needed). */
+export function calendarUrl({ title, startISO, link, minutes = 60 }) {
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const start = new Date(startISO);
+  const end = new Date(start.getTime() + minutes * 60000);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: `Join the meeting: ${link}`,
+    location: link,
+  });
+  return `https://calendar.google.com/calendar/render?${params}`;
+}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Hand, Lock, MicOff, Send, UserX, X } from 'lucide-react';
 import { formatTime, initials } from '../utils';
+import TranscriptPanel from './TranscriptPanel';
 
 function Chat({ messages, selfId, onSend }) {
   const [text, setText] = useState('');
@@ -82,14 +83,18 @@ function People({ people, isHost, waiting, waitingRoom, onWaitingRoom, onAdmit, 
   );
 }
 
-export default function SidePanel({ tab, onClose, chat, people }) {
+const TITLES = { chat: 'Chat', people: 'People', transcript: 'Transcript' };
+
+export default function SidePanel({ tab, onClose, chat, people, transcript }) {
   return (
-    <aside className="panel" aria-label={tab === 'chat' ? 'Chat' : 'People'}>
+    <aside className="panel" aria-label={TITLES[tab]}>
       <header className="panel-head">
-        <h2>{tab === 'chat' ? 'Chat' : 'People'}</h2>
+        <h2>{TITLES[tab]}</h2>
         <button className="icon-btn" aria-label="Close panel" onClick={onClose}><X size={18} /></button>
       </header>
-      {tab === 'chat' ? <Chat {...chat} /> : <People {...people} />}
+      {tab === 'chat' && <Chat {...chat} />}
+      {tab === 'people' && <People {...people} />}
+      {tab === 'transcript' && <TranscriptPanel {...transcript} />}
     </aside>
   );
 }

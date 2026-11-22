@@ -19,6 +19,8 @@ export const env = {
   mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/huddle',
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   clientOrigins: list(process.env.CLIENT_ORIGIN || 'http://localhost:5173'),
+  dnsServers: list(process.env.DNS_SERVERS),
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   anthropicKey: process.env.ANTHROPIC_API_KEY || '',
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
   turnUrls: list(process.env.TURN_URLS),

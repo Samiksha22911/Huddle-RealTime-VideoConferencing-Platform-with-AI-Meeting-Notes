@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bookmark, Download, Sparkles, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useNotes } from '../hooks/useNotes';
 import { downloadText, formatDate, formatTime } from '../utils';
 
-function toText(d) {
+function toText(d, saved) {
   const s = d.summary;
   const parts = [`${d.title}`, formatDate(d.createdAt), `Participants: ${d.participantNames.join(', ')}`, ''];
+  if (saved.length) {
+    parts.push('MY SAVED NOTES');
+    saved.forEach((n) => parts.push(`[${formatTime(n.at)}] ${n.speaker}: ${n.text}${n.comment ? `\n    My comment: ${n.comment}` : ''}`));
+    parts.push('');
+  }
   if (s) {
     parts.push('SUMMARY', s.text, '');
     if (s.keyPoints?.length) parts.push('KEY POINTS', ...s.keyPoints.map((k) => `- ${k}`), '');
@@ -27,6 +33,7 @@ export default function MeetingDetail() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState({});
+  const notes = useNotes(roomId, token);
 
   useEffect(() => {
     api(`/meetings/${roomId}/details`, { token }).then(setData).catch((e) => setError(e.message));
@@ -69,7 +76,7 @@ export default function MeetingDetail() {
         </div>
         <div className="detail-actions">
           {!data.endedAt && <Link className="btn btn-ghost" to={`/room/${data.roomId}`}>Rejoin</Link>}
-          <button className="btn btn-ghost" onClick={() => downloadText(toText(data), `${data.title.replace(/\W+/g, '-')}.txt`)}>
+          <button className="btn btn-ghost" onClick={() => downloadText(toText(data, notes.notes), `${data.title.replace(/\W+/g, '-')}.txt`)}>
             <Download size={16} /> Download
           </button>
         </div>
@@ -77,7 +84,37 @@ export default function MeetingDetail() {
 
       <section className="notes-card">
         <div className="section-head">
-          <h2>Meeting notes</h2>
+          <h2>My saved notes</h2>
+          <span className="muted">{notes.notes.length} saved</span>
+        </div>
+        {notes.notes.length === 0 ? (
+          <p className="empty">Nothing saved yet. Open the transcript below and click the lines you want to keep. During a meeting, use the Transcript button.</p>
+        ) : (
+          <ul className="saved-list">
+            {notes.notes.map((n) => (
+              <li key={n.id}>
+                <div className="saved-top">
+                  <span><strong>{n.speaker}</strong> <time>{formatTime(n.at)}</time></span>
+                  <button className="icon-btn bad" aria-label="Remove this note" onClick={() => notes.toggle({ id: n.lineId })}><Trash2 size={16} /></button>
+                </div>
+                <p className="saved-text">{n.text}</p>
+                <input
+                  className="saved-comment"
+                  defaultValue={n.comment}
+                  placeholder="Add your own comment"
+                  maxLength={500}
+                  aria-label="Your comment on this note"
+                  onBlur={(e) => e.target.value.trim() !== n.comment && notes.setComment(n, e.target.value)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="notes-card">
+        <div className="section-head">
+          <h2>Meeting summary</h2>
           <button className="btn btn-primary" onClick={generate} disabled={busy || !hasContent}>
             <Sparkles size={16} /> {busy ? 'Writing notes' : s ? 'Regenerate notes' : 'Generate notes'}
           </button>
@@ -126,9 +163,22 @@ export default function MeetingDetail() {
       </section>
 
       <details className="log">
-        <summary>Transcript ({data.transcript.length} lines)</summary>
+        <summary>Full transcript ({data.transcript.length} lines). Click a line to save it.</summary>
         {data.transcript.length === 0 ? <p className="muted">No captions were recorded.</p> : (
-          <ol>{data.transcript.map((t, i) => <li key={i}><time>{formatTime(t.at)}</time> <strong>{t.speaker}</strong> {t.text}</li>)}</ol>
+          <ol className="log-lines">
+            {data.transcript.map((t, i) => {
+              const isSaved = !!t.id && notes.byLine.has(t.id);
+              return (
+                <li key={t.id || i}>
+                  <button type="button" className={`tline ${isSaved ? 'is-saved' : ''}`} onClick={() => notes.toggle(t)} aria-pressed={isSaved}>
+                    <span className="tline-meta"><strong>{t.speaker}</strong> <time>{formatTime(t.at)}</time></span>
+                    <span className="tline-text">{t.text}</span>
+                    <Bookmark size={16} className="tline-mark" aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </details>
       <details className="log">

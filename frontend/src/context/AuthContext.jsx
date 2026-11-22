@@ -39,13 +39,17 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => finish(await api('/auth/login', { method: 'POST', body: { email, password } })), [finish]);
   const register = useCallback(async (name, email, password) => finish(await api('/auth/register', { method: 'POST', body: { name, email, password } })), [finish]);
+  const loginWithGoogle = useCallback(async (credential) => finish(await api('/auth/google', { method: 'POST', body: { credential } })), [finish]);
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, token, loading, login, register, logout }), [user, token, loading, login, register, logout]);
+  const value = useMemo(
+    () => ({ user, token, loading, login, register, loginWithGoogle, logout }),
+    [user, token, loading, login, register, loginWithGoogle, logout]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -18,6 +18,7 @@ This project started from the Apna College "Zoom clone" tutorial. Almost everyth
 * Socket.IO is only the *signalling* channel: it passes offers, answers and ICE candidates between two specific people (`signal` event). The media then flows directly between browsers.
 * **The newcomer offers, everyone else answers.** On `joined` the new person calls `callPeer(id)` for each existing peer. That removes the original project's bug where every peer connection was recreated each time someone joined.
 * Each connection always has one audio and one video transceiver. Real tracks are attached with `replaceTrack`, so mute, camera off and screen share never renegotiate.
+* **Answering side:** the person who answers creates no transceivers up front. They are created from the offer, and the answerer then sets them to `sendrecv` and attaches its own tracks with `replaceTrack`. (Pre-creating them with `addTransceiver` leaves your tracks on unused transceivers, so the caller receives nothing from you. This was tested with real WebRTC in headless Chromium.) If two people call each other at the same instant, the smaller socket id gives way (glare handling).
 * STUN is always on; TURN is added from `/api/v1/config/ice` when you set `TURN_*` variables.
 * **Try:** add a connection-quality indicator using `pc.getStats()`; add "reconnect" when `connectionState` becomes `failed` (`pc.restartIce()`).
 
@@ -104,3 +105,8 @@ Add the live link and repo link under the title, and be ready to say "I started 
 
 * The AI notes are only as good as the speech recognition. Say so in your demo and show the "check before sharing" label.
 * Mesh calls are for small groups. Naming that limit (and the SFU upgrade path) in an interview scores better than ignoring it.
+
+## 8. Features added later (know these for interviews)
+* **Transcript notes** (`TranscriptPanel.jsx`, `useNotes.js`, `notes.controller.js`): the server gives every finished caption sentence an id and broadcasts it (`transcript-line`). A note stores only the line id; the server copies the text from its own transcript, so a client cannot forge a note. A unique index on (user, room, line) makes double clicks safe.
+* **Scheduling and QR invites** (`Home.jsx`, `InviteShare.jsx`): `scheduledFor` on the meeting, validated server-side (not in the past, at most one year ahead); the calendar link is a Google Calendar template URL, so no calendar API is needed.
+* **Google sign-in** (`auth.controller.js`): the server verifies Google's ID token (signature, expiry, audience, `email_verified`), links to an existing account with the same verified email, then issues its own JWT. See `docs/GOOGLE_LOGIN.md`.

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Captions, Circle, Hand, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, Smile, Square, Users, Video, VideoOff } from 'lucide-react';
+import { Captions, Circle, Hand, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, ScrollText, Smile, Square, Users, Video, VideoOff } from 'lucide-react';
 
 const EMOJIS = ['👍', '👏', '😂', '❤️', '🎉', '😮'];
 
@@ -80,6 +80,9 @@ export default function ControlBar({ m }) {
 
       <Btn label="Chat" on={m.panel === 'chat'} badge={m.unread} onClick={() => m.onPanel('chat')}>
         <MessageSquare size={20} />
+      </Btn>
+      <Btn label="Transcript and saved notes" on={m.panel === 'transcript'} onClick={() => m.onPanel('transcript')}>
+        <ScrollText size={20} />
       </Btn>
       <Btn label="People" on={m.panel === 'people'} badge={m.waitingCount} onClick={() => m.onPanel('people')}>
         <Users size={20} />

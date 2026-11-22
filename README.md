@@ -13,7 +13,9 @@ Huddle is a full-stack video conferencing app. People meet over WebRTC, turn on 
 | Hosting | Waiting room, mute a participant, remove a participant (and block that browser), end meeting for everyone |
 | Engagement | Raise hand, emoji reactions, persistent chat, recording consent banner |
 | Recording | Record to a `.webm` file on your own device (your mic is mixed in) |
-| Accounts | Register and sign in (JWT), meeting history, notes page, download notes as text, delete meetings |
+| Transcript notes | Live transcript panel: click any line to save it to your personal notes, add comments, search, review and download after the meeting |
+| Scheduling | Schedule meetings, upcoming list, Add to Google Calendar, QR code + WhatsApp invite |
+| Accounts | Email/password and Continue with Google, JWT sessions, meeting history, notes page, delete meetings |
 | Quality | Zod validation, rate limiting, Helmet, CORS allow-list, unit tests, CI, Docker |
 
 ## Quick start
@@ -26,13 +28,13 @@ docker compose up -d mongo
 
 # 2. backend
 cd backend
-cp .env.example .env        # then edit JWT_SECRET (and optionally ANTHROPIC_API_KEY)
+cp .env.example .env        # Windows CMD: copy .env.example .env  | then edit MONGO_URI and JWT_SECRET
 npm install
 npm run dev                 # http://localhost:8000
 
 # 3. frontend (new terminal)
 cd frontend
-cp .env.example .env
+cp .env.example .env        # Windows CMD: copy .env.example .env
 npm install
 npm run dev                 # http://localhost:5173
 ```
@@ -87,6 +89,8 @@ Backend (`backend/.env`): `MONGO_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`, `ANTHROPIC
 Frontend (`frontend/.env`): `VITE_SERVER_URL`.
 
 ## Deploy
+
+**Full step-by-step guide with a test checklist: [docs/DEPLOY.md](docs/DEPLOY.md).** A `render.yaml` blueprint is included. Summary:
 
 1. **Database:** create a free MongoDB Atlas cluster, create a database user, allow your server's IP, copy the connection string.
 2. **Backend (Render, Railway, Fly.io):** root directory `backend`, build `npm install`, start `npm start`. Set the environment variables above; `CLIENT_ORIGIN` must be your frontend URL.

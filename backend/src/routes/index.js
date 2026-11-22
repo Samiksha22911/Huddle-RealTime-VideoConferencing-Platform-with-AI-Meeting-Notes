@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { requireAuth } from '../middleware/auth.js';
 import { wrap } from '../middleware/error.js';
-import { login, me, register } from '../controllers/auth.controller.js';
+import { googleLogin, login, me, register } from '../controllers/auth.controller.js';
 import {
   createMeeting,
   createSummary,
@@ -11,6 +11,7 @@ import {
   getPublicInfo,
   listMeetings,
 } from '../controllers/meetings.controller.js';
+import { createNote, deleteNote, listNotes, updateNote } from '../controllers/notes.controller.js';
 import { env } from '../config/env.js';
 
 const router = Router();
@@ -22,6 +23,7 @@ const summaryLimiter = limiter(60 * 60 * 1000, 20); // protects your AI credits
 // auth
 router.post('/auth/register', authLimiter, wrap(register));
 router.post('/auth/login', authLimiter, wrap(login));
+router.post('/auth/google', authLimiter, wrap(googleLogin));
 router.get('/auth/me', requireAuth, wrap(me));
 
 // meetings
@@ -31,6 +33,12 @@ router.get('/meetings/:roomId', wrap(getPublicInfo));
 router.get('/meetings/:roomId/details', requireAuth, wrap(getDetails));
 router.post('/meetings/:roomId/summary', requireAuth, summaryLimiter, wrap(createSummary));
 router.delete('/meetings/:roomId', requireAuth, wrap(deleteMeeting));
+
+// personal saved notes (transcript lines a user chose to keep)
+router.get('/meetings/:roomId/notes', requireAuth, wrap(listNotes));
+router.post('/meetings/:roomId/notes', requireAuth, wrap(createNote));
+router.patch('/notes/:id', requireAuth, wrap(updateNote));
+router.delete('/notes/:id', requireAuth, wrap(deleteNote));
 
 // WebRTC ICE servers (STUN always, TURN when configured)
 router.get('/config/ice', (req, res) => {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { APP_NAME } from '../config';
+import { APP_NAME, GOOGLE_CLIENT_ID } from '../config';
 
 export default function AuthPage() {
-  const { user, login, register } = useAuth();
+  const { user, login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState('login');
@@ -21,6 +22,18 @@ export default function AuthPage() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const signup = mode === 'register';
+
+  const onGoogle = async (response) => {
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithGoogle(response.credential);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -46,6 +59,21 @@ export default function AuthPage() {
           <button role="tab" aria-selected={!signup} className={!signup ? 'on' : ''} onClick={() => { setMode('login'); setError(''); }}>Sign in</button>
           <button role="tab" aria-selected={signup} className={signup ? 'on' : ''} onClick={() => { setMode('register'); setError(''); }}>Create account</button>
         </div>
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div className="google-wrap">
+              <GoogleLogin
+                onSuccess={onGoogle}
+                onError={() => setError('Google sign-in was cancelled or failed. Please try again.')}
+                text={signup ? 'signup_with' : 'continue_with'}
+                shape="rectangular"
+                size="large"
+              />
+            </div>
+            <div className="or-divider"><span>or use email</span></div>
+          </>
+        )}
 
         <form onSubmit={submit} noValidate>
           {signup && (

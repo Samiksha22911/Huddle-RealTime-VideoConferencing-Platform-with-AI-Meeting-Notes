@@ -4,7 +4,9 @@ const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 50 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
+    // Accounts created with Google have no password
+    passwordHash: { type: String, required() { return !this.googleId; } },
+    googleId: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );

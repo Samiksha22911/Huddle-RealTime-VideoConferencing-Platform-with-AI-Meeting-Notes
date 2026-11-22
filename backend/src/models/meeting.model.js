@@ -7,10 +7,11 @@ const meetingSchema = new Schema(
     host: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     hostName: { type: String, required: true },
     waitingRoom: { type: Boolean, default: false },
+    scheduledFor: Date,
     attendeeIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     participantNames: [String],
     chat: [{ _id: false, sender: String, text: String, at: { type: Date, default: Date.now } }],
-    transcript: [{ _id: false, speaker: String, text: String, at: { type: Date, default: Date.now } }],
+    transcript: [{ speaker: String, text: String, at: { type: Date, default: Date.now } }],
     summary: {
       text: String,
       keyPoints: [String],

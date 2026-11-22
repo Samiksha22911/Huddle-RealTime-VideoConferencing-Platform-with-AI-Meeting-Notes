@@ -8,6 +8,7 @@ import { useLocalMedia } from '../hooks/useLocalMedia';
 import { useMeeting } from '../hooks/useMeeting';
 import { captionsSupported, useSpeechCaptions } from '../hooks/useSpeechCaptions';
 import { useRecorder } from '../hooks/useRecorder';
+import { useNotes } from '../hooks/useNotes';
 import { formatDuration } from '../utils';
 import Lobby from '../components/Lobby';
 import VideoTile from '../components/VideoTile';
@@ -90,6 +91,9 @@ export default function Room() {
       meeting.sendCaption(text, final);
     },
   });
+
+  const notes = useNotes(roomId, token);
+  const savedIds = useMemo(() => new Set(notes.byLine.keys()), [notes.byLine]);
 
   const recorder = useRecorder({ micTrack: local.micTrack, onChange: meeting.sendRecording });
 
@@ -277,6 +281,7 @@ export default function Room() {
             tab={panel}
             onClose={() => setPanel(null)}
             chat={{ messages: meeting.messages, selfId: meeting.selfId, onSend: meeting.sendChat }}
+            transcript={{ lines: meeting.transcript, saved: savedIds, onToggle: notes.toggle, canSave: !!user }}
             people={{
               people,
               isHost: meeting.isHost,

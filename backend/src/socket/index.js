@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Server } from 'socket.io';
 import { Meeting } from '../models/meeting.model.js';
 import { verifyToken } from '../middleware/auth.js';
@@ -44,7 +45,7 @@ function notifyHosts(io, room) {
 }
 
 async function enterRoom(io, socket, room, { roomId, name, isHost, clientId }) {
-  const meeting = await Meeting.findOne({ roomId }).select('title chat').lean();
+  const meeting = await Meeting.findOne({ roomId }).select('title chat transcript').lean();
   if (!meeting) return socket.emit('error-message', 'Meeting not found');
 
   const user = socket.data.user;
@@ -67,6 +68,7 @@ async function enterRoom(io, socket, room, { roomId, name, isHost, clientId }) {
     peers: existing,
     waiting: isHost ? [...room.waiting.values()] : [],
     messages: (meeting.chat || []).slice(-100),
+    transcript: (meeting.transcript || []).slice(-300).map((t) => ({ id: String(t._id), speaker: t.speaker, text: t.text, at: t.at })),
   });
   socket.to(channel(roomId)).emit('peer-joined', publicPeer(me));
   if (isHost) notifyHosts(io, room);
@@ -169,7 +171,13 @@ export function attachSocket(httpServer) {
       const clean = clip(text, 500).trim();
       if (!clean) return;
       socket.to(channel(roomId)).emit('caption', { id: socket.id, name: peer.name, text: clean, final: !!final });
-      if (final) persist(roomId, { $push: { transcript: { speaker: peer.name, text: clean, at: new Date() } } });
+      if (final) {
+        // Finished sentences become permanent transcript lines with an id, sent to EVERYONE
+        // (including the speaker) so people can click a line to save it as a note.
+        const line = { _id: new mongoose.Types.ObjectId(), speaker: peer.name, text: clean, at: new Date() };
+        io.to(channel(roomId)).emit('transcript-line', { id: String(line._id), speaker: line.speaker, text: line.text, at: line.at.toISOString() });
+        persist(roomId, { $push: { transcript: line } });
+      }
     });
 
     socket.on('media-state', (state = {}) => {

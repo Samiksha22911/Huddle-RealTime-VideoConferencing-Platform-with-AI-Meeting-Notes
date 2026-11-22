@@ -3,10 +3,6 @@
    Idea: meeting notes. Ink navy + a highlighter-yellow accent (the thing you mark with).
    Change the whole look from the variables below.
    ========================================================================== */
-
-.invite-box { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
-.invite-box code { background: var(--surface-2); padding: 8px 12px; border-radius: 8px; font-weight: 700; }
-
 :root {
   --bg: #f3f6fa;
   --surface: #ffffff;
@@ -313,3 +309,48 @@ video { background: #0b1422; }
   .rec-badge i, .spinner { animation-duration: 3s; }
   .mock-notes li i { animation-duration: 0.01s; animation-delay: 0s !important; }
 }
+
+/* ---------- invite + scheduling ---------- */
+.invite { margin-top: 14px; }
+.invite-box { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.invite-box code { background: var(--surface-2); padding: 8px 12px; border-radius: 8px; font-weight: 700; letter-spacing: 0.02em; }
+.qr { margin-top: 12px; display: inline-grid; gap: 8px; justify-items: center; padding: 14px; background: #fff; border-radius: 14px; border: 1px solid var(--line); }
+.qr .muted { color: #566882; font-size: 0.85rem; }
+.scheduled-note { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 8px; background: var(--mark); color: var(--mark-ink); font-weight: 700; font-size: 0.9rem; }
+.upcoming { padding: 18px 0; border-top: 1px solid var(--line); }
+.upcoming h3 { font-size: 1.1rem; margin-bottom: 2px; }
+.upcoming-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- transcript + saved notes ---------- */
+.tpanel { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tpanel-tools { padding: 12px 12px 6px; display: grid; gap: 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18); }
+.tsearch { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.tsearch input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 8px 0; outline: none; }
+.thint { font-size: 0.8rem; color: var(--muted); }
+.tlist, .log-lines { list-style: none; margin: 0; padding: 6px 8px 12px; }
+.tlist { flex: 1; min-height: 0; overflow: auto; }
+.tline { position: relative; display: grid; gap: 2px; width: 100%; text-align: left; padding: 8px 36px 8px 10px; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; }
+.tline:hover { background: var(--surface-2); }
+.tline-meta { font-size: 0.78rem; color: var(--muted); }
+.tline-meta time { margin-left: 4px; }
+.tline-text { overflow-wrap: anywhere; }
+.tline-mark { position: absolute; top: 10px; right: 10px; opacity: 0.35; }
+.tline:hover .tline-mark { opacity: 0.7; }
+.tline.is-saved .tline-text { background: linear-gradient(transparent 55%, color-mix(in srgb, var(--mark) 60%, transparent) 55%); width: fit-content; }
+.tline.is-saved .tline-mark { opacity: 1; fill: var(--mark); stroke: var(--text); }
+.jump-latest { position: absolute; right: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: var(--mark); color: var(--mark-ink); font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
+.log-lines { display: grid; gap: 2px; max-height: 420px; overflow: auto; padding: 8px 0 0; }
+
+.saved-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 14px; }
+.saved-list li { border-left: 4px solid var(--mark); padding: 2px 0 2px 14px; }
+.saved-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+.saved-text { font-size: 1.05rem; margin: 4px 0 8px; }
+.saved-comment { width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+
+/* ---------- google sign-in ---------- */
+.google-wrap { display: flex; justify-content: center; margin-bottom: 18px; min-height: 44px; }
+.or-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 0.85rem; margin: 0 0 18px; }
+.or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
