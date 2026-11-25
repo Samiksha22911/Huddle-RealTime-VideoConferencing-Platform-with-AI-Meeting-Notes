@@ -101,7 +101,7 @@ export async function getDetails(req, res) {
     chat: meeting.chat,
     transcript: meeting.transcript.map((t) => ({ id: t._id ? String(t._id) : undefined, speaker: t.speaker, text: t.text, at: t.at })),
     summary: meeting.summary?.generatedAt ? meeting.summary : null,
-    aiEnabled: !!env.anthropicKey,
+    aiEnabled: env.aiEnabled,
   });
 }
 
@@ -115,7 +115,7 @@ export async function createSummary(req, res) {
   }
   meeting.summary = await generateSummary(meeting);
   await meeting.save();
-  res.json({ summary: meeting.summary, aiEnabled: !!env.anthropicKey });
+  res.json({ summary: meeting.summary, aiEnabled: env.aiEnabled });
 }
 
 export async function deleteMeeting(req, res) {

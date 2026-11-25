@@ -16,7 +16,7 @@ async function start() {
 
   server.listen(env.port, () => {
     console.log(`Huddle server listening on :${env.port}`);
-    console.log(env.anthropicKey ? 'AI notes: enabled' : 'AI notes: basic mode (set ANTHROPIC_API_KEY to enable AI)');
+    console.log(env.aiEnabled ? 'AI notes: enabled' : 'AI notes: basic mode (set GEMINI_API_KEY to enable AI)');
   });
 
   const shutdown = () => server.close(() => mongoose.disconnect().then(() => process.exit(0)));

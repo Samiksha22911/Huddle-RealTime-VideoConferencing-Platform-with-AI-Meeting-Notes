@@ -31,6 +31,32 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
+/** Google Gemini (has a free tier). Key: https://aistudio.google.com/apikey */
+async function callGemini(meeting) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(env.geminiModel)}:generateContent`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': env.geminiKey,
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: 'user', parts: [{ text: buildPrompt(meeting) }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 2000,
+        responseMimeType: 'application/json',
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const data = await res.json();
+  const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+  return resultSchema.parse(extractJson(text));
+}
+
+/** Anthropic Claude (paid). Used only if GEMINI_API_KEY is not set. */
 async function callClaude(meeting) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -56,9 +82,10 @@ async function callClaude(meeting) {
 export async function generateSummary(meeting) {
   let result;
   let source = 'basic';
-  if (env.anthropicKey) {
+  const provider = env.geminiKey ? callGemini : env.anthropicKey ? callClaude : null;
+  if (provider) {
     try {
-      result = await callClaude(meeting);
+      result = await provider(meeting);
       source = 'ai';
     } catch (err) {
       console.error('AI summary failed, using basic notes:', err.message);
